@@ -12,7 +12,9 @@ const pubsub = new PubSub()
 const server = new ApolloServer({
   schema,
   context: async ({ req }) => {
+    // module: user / auth
     const username = jwt.verify(req.cookies.authToken, secret) as string
+    // should be either global or in a shared module
     const db = await pool.connect()
     let currentUser
     if (username) {
@@ -27,6 +29,7 @@ const server = new ApolloServer({
     }
   },
   formatResponse: (res: any, { context }: { context: MyContext }) => {
+    // this could be moved to GraphQLExtension.willSendResponse
     context.db.release()
     return res
   }

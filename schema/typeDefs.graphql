@@ -1,11 +1,22 @@
+"""
+module: common
+"""
 scalar Date
 
+"""
+module: user
+imports: common
+"""
 type User {
   id: ID!
   name: String!
   picture: String
 }
 
+"""
+module: chat
+imports: user, common
+"""
 type Message {
   id: ID!
   content: String!
@@ -15,7 +26,10 @@ type Message {
   recipient: User
   isMine: Boolean!
 }
-
+"""
+module: chat
+imports: user
+"""
 type Chat {
   id: ID!
   name: String
@@ -26,20 +40,50 @@ type Chat {
 }
 
 type Query {
+  """
+  module: user
+  """
   me: User
+  """
+  module: common
+  """
   chats: [Chat!]!
+  """
+  module: common
+  """
   chat(chatId: ID!): Chat
+  """
+  module: user
+  """
   users: [User!]!
 }
 
 type Mutation {
+  """
+  module: chat
+  """
   addMessage(chatId: ID!, content: String!): Message
+  """
+  module: chat
+  """
   addChat(recipientId: ID!): Chat
+  """
+  module: chat
+  """
   removeChat(chatId: ID!): ID
 }
 
 type Subscription {
+  """
+  module: chat
+  """
   messageAdded: Message!
+  """
+  module: chat
+  """
   chatAdded: Chat!
+  """
+  module: chat
+  """
   chatRemoved: ID!
 }

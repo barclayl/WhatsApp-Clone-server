@@ -19,6 +19,7 @@ app.get('/_ping', (req, res) => {
   res.send('pong')
 })
 
+// module: user/auth
 app.post('/sign-up', async (req, res) => {
   const { name, username, password, passwordConfirm } = req.body
 
@@ -52,6 +53,7 @@ app.post('/sign-up', async (req, res) => {
   res.status(200).send({ id: user.id })
 })
 
+// module: user/auth
 app.post('/sign-in', async (req, res) => {
   const { username, password } = req.body
 
