@@ -4,9 +4,10 @@ import cookieParser from 'cookie-parser'
 import express from 'express'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
-import { User, users } from './db'
+import { pool } from './db'
 import { expiration, origin, secret } from './env'
 import { validateLength, validatePassword } from './validators'
+import sql from 'sql-template-strings'
 
 export const app = express()
 
@@ -18,7 +19,7 @@ app.get('/_ping', (req, res) => {
   res.send('pong')
 })
 
-app.post('/sign-up', (req, res) => {
+app.post('/sign-up', async (req, res) => {
   const { name, username, password, passwordConfirm } = req.body
 
   try {
@@ -30,7 +31,8 @@ app.post('/sign-up', (req, res) => {
       throw Error("req.password and req.passwordConfirm don't match")
     }
 
-    if (users.some(u => u.username === username)) {
+    const { rows } = await pool.query(sql`SELECT * FROM users WHERE username = ${username}`)
+    if (rows[0]) {
       throw Error("username already exists")
     }
   } catch (e) {
@@ -39,23 +41,22 @@ app.post('/sign-up', (req, res) => {
 
   const passwordHash = bcrypt.hashSync(password, bcrypt.genSaltSync(8))
 
-  const user: User = {
-    id: String(users.length + 1),
-    password: passwordHash,
-    picture: '',
-    username,
-    name,
-  }
+  const { rows } = await pool.query(sql`
+    INSERT INTO users(password, picture, username, name)
+    VALUES(${passwordHash}, '', ${username}, ${name})
+    RETURNING *
+  `)
 
-  users.push(user)
+  const user = rows[0]
 
   res.status(200).send({ id: user.id })
 })
 
-app.post('/sign-in', (req, res) => {
+app.post('/sign-in', async (req, res) => {
   const { username, password } = req.body
 
-  const user = users.find(u => u.username === username)
+  const { rows } = await pool.query(sql`SELECT * FROM users WHERE username = ${username}`)
+  const user = rows[0]
 
   if (!user) {
     return res.status(404).send('user not found')
