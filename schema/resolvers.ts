@@ -6,6 +6,8 @@ import { secret, expiration } from '../env'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import { validateLength, validatePassword } from '../validators';
+import axios from 'axios';
+import { RandomPhoto } from "../types/unsplash";
 
 const resolvers: Resolvers = {
   Date: GraphQLDateTime,
@@ -41,7 +43,7 @@ const resolvers: Resolvers = {
       return participant ? participant.name : null
     },
 
-    picture(chat, args, { currentUser }) {
+    async picture(chat, args, { currentUser }) {
       if (!currentUser) return null
 
       const participantId = chat.participants.find(p => p !== currentUser.id)
@@ -50,7 +52,24 @@ const resolvers: Resolvers = {
 
       const participant = users.find(u => u.id === participantId)
 
-      return participant ? participant.picture : null
+      if (participant && participant.picture) return participant.picture
+
+      let pic: RandomPhoto | undefined
+      try {
+        pic = (await axios.get<RandomPhoto>('https://api.unsplash.com/photos/random', {
+          params: {
+            query: 'portrait',
+            orientation: 'squarish',
+          },
+          headers: {
+            Authorization: 'Client-ID 4d048cfb4383b407eff92e4a2a5ec36c0a866be85e64caafa588c110efad350d'
+          },
+        })).data
+      } catch (err) {
+        console.error('Cannot retrieve random photo:', err)
+      }
+
+      return pic ? pic.urls.small : null;
     },
 
     messages(chat) {

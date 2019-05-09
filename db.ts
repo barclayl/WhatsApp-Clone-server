@@ -3,7 +3,7 @@ export type User = {
   name: string
   username: string
   password: string
-  picture: string
+  picture: string | null
 }
 
 export type Message = {
@@ -31,7 +31,7 @@ export const resetDb = () => {
       name: 'Ray Edwards',
       username: 'ray',
       password: '$2a$08$NO9tkFLCoSqX1c5wk3s7z.JfxaVMKA.m7zUDdDwEquo4rvzimQeJm', // 111
-      picture: 'https://randomuser.me/api/portraits/thumb/lego/1.jpg',
+      picture: null,
     },
     {
       id: '2',
