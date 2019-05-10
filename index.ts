@@ -5,6 +5,7 @@ import { app } from './app'
 import { users } from './db'
 import { origin, port, secret } from './env'
 import schema from './schema'
+import { UnsplashApi } from "./schema/unsplash.api";
 
 const pubsub = new PubSub()
 const server = new ApolloServer({
@@ -22,6 +23,9 @@ const server = new ApolloServer({
       res,
     }
   },
+  dataSources: () => ({
+    unsplashApi: new UnsplashApi(),
+  }),
 })
 
 server.applyMiddleware({

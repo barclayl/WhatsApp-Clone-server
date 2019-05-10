@@ -6,10 +6,6 @@ import { secret, expiration } from '../env'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import { validateLength, validatePassword } from '../validators';
-import axios from 'axios';
-import { RandomPhoto } from "../types/unsplash";
-import { trackProvider } from '@safe-api/middleware';
-import { resolve } from "path";
 
 const resolvers: Resolvers = {
   Date: GraphQLDateTime,
@@ -45,7 +41,7 @@ const resolvers: Resolvers = {
       return participant ? participant.name : null
     },
 
-    async picture(chat, args, { currentUser }) {
+    async picture(chat, args, { currentUser, dataSources }) {
       if (!currentUser) return null
 
       const participantId = chat.participants.find(p => p !== currentUser.id)
@@ -54,40 +50,7 @@ const resolvers: Resolvers = {
 
       const participant = users.find(u => u.id === participantId)
 
-      if (participant && participant.picture) return participant.picture
-
-      interface RandomPhotoInput {
-        query: string;
-        orientation: 'landscape' | 'portrait' | 'squarish';
-      }
-
-      const trackedRandomPhoto = await trackProvider(async ({query, orientation}: RandomPhotoInput) =>
-          (await axios.get<RandomPhoto>('https://api.unsplash.com/photos/random', {
-            params: {
-              query,
-              orientation,
-            },
-            headers: {
-              Authorization: 'Client-ID 4d048cfb4383b407eff92e4a2a5ec36c0a866be85e64caafa588c110efad350d'
-            },
-          })).data,
-        {
-          provider: 'Unsplash',
-          method: 'RandomPhoto',
-          location: resolve(__dirname, '../logs/main'),
-        });
-
-      let pic: RandomPhoto | undefined
-      try {
-        pic = await trackedRandomPhoto({
-          query: 'portrait',
-          orientation: 'squarish',
-        })
-      } catch (err) {
-        console.error('Cannot retrieve random photo:', err)
-      }
-
-      return pic ? pic.urls.small : null;
+      return (participant && participant.picture) ? participant.picture : dataSources.unsplashApi.getRandomPhoto()
     },
 
     messages(chat) {
